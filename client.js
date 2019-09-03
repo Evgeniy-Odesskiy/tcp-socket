@@ -3,10 +3,12 @@ const SocketWrapper = require('./socket-wrapper');
 
 const port = 8888;
 
+const toLongString = require('./toLongString');
 
 var client = new SocketWrapper();
 client.on('connect', function() {
   console.log('Connected');
+  // client.write(toLongString);
 	client.write('Hello, server! Love, Client.');
 });
 
@@ -27,9 +29,11 @@ const stdin = process.openStdin();
 
 stdin.addListener("data", function(d) {
   const inputVal = d.toString().trim();
-  // console.log("you entered: [" + 
-  //     inputVal + "]");
-  client.write(inputVal);
+  if (inputVal == 'longString') {
+    client.write(toLongString);
+  } else {
+    client.write(inputVal);
+  }
 });
 
 // var readline = require('readline');

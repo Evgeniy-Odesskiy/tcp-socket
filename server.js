@@ -8,7 +8,7 @@ const clients = [];
 
 const server = new Net.Server(socket => {
 	socket = new SocketWrapper(socket);
-	
+
 	console.log('A new connection has been established.');
 	clients.push(socket)
 
@@ -18,7 +18,6 @@ const server = new Net.Server(socket => {
 		const message = chunk.toString();
 		clients.forEach(client => {
 			if (client === socket) return;
-			client.write(message);
 			client.write(message);
 		})	
 		// console.log(`Data received from client: ${message}.`)

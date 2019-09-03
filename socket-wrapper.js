@@ -1,6 +1,7 @@
 const { Socket } = require('net');
 const { Duplex } = require('stream');
 
+const bufferLength = 65536;
 
 class SocketWrapper extends Duplex {
 
@@ -34,45 +35,55 @@ class SocketWrapper extends Duplex {
 
   _onReadable() {
     while (!this._readingPaused) {
+      if (this._remainingBuffer) {
+        // console.log('FILL REMEINING BUFFER')
+        const { expectedBytes, buffer } = this._remainingBuffer;
+        let expectedBuffer = this._socket.read(expectedBytes);
+        const fullBuffer = Buffer.concat([buffer, expectedBuffer]);
+        // console.log(fullBuffer.toString('utf8'));
+        delete this._remainingBuffer;
+        this.push(fullBuffer);
+      }
+
       let lenBuf = this._socket.read(4);
       if (!lenBuf) return;
 
       let len = lenBuf.readUInt32BE();
-      console.log('get message with length', len);
+      // console.log('get message with length', len, this._socket.bytesRead);
 
-      if (len > 2 ** 18) {
-        this.socket.destroy(new Error('Max length exceeded'));
+
+      if (len >= bufferLength) {
+        // console.log('exceeded amount of bytes, read remaining buffer');
+        let remeiningBuffer = this._socket.read(len-4);
+        // console.log('remaining body:', remeiningBuffer);
+        this._remainingBuffer = {
+          buffer: remeiningBuffer,
+          expectedBytes: len - (len - 4)
+        }
         return;
       }
 
       let body = this._socket.read(len);
-      console.log('get message with body', body);
 
       if (!body) {
         this._socket.unshift(lenBuf);
         return;
       }
 
-      let json;
-      try {
-        json = JSON.parse(body);
-      } catch (ex) {
-        this.socket.destroy(ex);
-        return;
-      }
-
-      let pushOk = this.push(json);
+      const resultString = body.toString('utf8');
+      // console.log('send body:', resultString)
+      let pushOk = this.push(resultString);
 
       if (!pushOk) this._readingPaused = true;
     }
   }
 
-  _write(obj, encoding, cb) {
-    let json = JSON.stringify(obj);
-    let jsonBytes = Buffer.byteLength(json);
-    let buffer = Buffer.alloc(4 + jsonBytes);
-    buffer.writeUInt32BE(jsonBytes);
-    buffer.write(json, 4);
+  _write (str, encoding, cb) {
+    // or simply toLongString.length
+    let strBytes = Buffer.byteLength(str, 'utf8');
+    let buffer = Buffer.alloc(4 + strBytes);
+    buffer.writeUInt32BE(strBytes);
+    buffer.write(str, 4);
     this._socket.write(buffer, cb);
   }
 
