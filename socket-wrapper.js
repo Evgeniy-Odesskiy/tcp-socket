@@ -13,7 +13,7 @@ class SocketWrapper extends Duplex {
     if (socket) this._wrapSocket(socket);
   }
 
-  connect({ host, port }) {
+  connect(host, port) {
     this._wrapSocket(new Socket());
     this._socket.connect({ host, port });
     return this;
@@ -38,6 +38,7 @@ class SocketWrapper extends Duplex {
       if (!lenBuf) return;
 
       let len = lenBuf.readUInt32BE();
+      console.log('get message with length', len);
 
       if (len > 2 ** 18) {
         this.socket.destroy(new Error('Max length exceeded'));
@@ -45,6 +46,7 @@ class SocketWrapper extends Duplex {
       }
 
       let body = this._socket.read(len);
+      console.log('get message with body', body);
 
       if (!body) {
         this._socket.unshift(lenBuf);

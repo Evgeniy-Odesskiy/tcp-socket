@@ -1,8 +1,12 @@
 const net = require('net');
+const SocketWrapper = require('./socket-wrapper');
 
-var client = new net.Socket();
-client.connect(8888, 'localhost', function() {
-	console.log('Connected');
+const port = 8888;
+
+
+var client = new SocketWrapper();
+client.on('connect', function() {
+  console.log('Connected');
 	client.write('Hello, server! Love, Client.');
 });
 
@@ -13,6 +17,8 @@ client.on('data', function(data) {
 client.on('close', function() {
 	console.log('Connection closed');
 });
+
+client.connect('localhost', port);
 
 
 // Input

@@ -1,18 +1,14 @@
 const Net = require('net');
+const SocketWrapper = require('./socket-wrapper')
 
 const port = 8888;
 
-// Use net.createServer() in your code. This is just for illustration purpose.
-// Create a new TCP server.
-const server = new Net.Server();
-
-server.listen(port, function() {
-	console.log(`Server listening for connection requests on socket localhost:${port}.`);
-});
-
 const clients = [];
 
-server.on('connection', function(socket) {
+
+const server = new Net.Server(socket => {
+	socket = new SocketWrapper(socket);
+	
 	console.log('A new connection has been established.');
 	clients.push(socket)
 
@@ -35,4 +31,8 @@ server.on('connection', function(socket) {
 	socket.on('error', function(err) {
 		console.log(`Error: ${err}`);
 	});
+});
+
+server.listen(port, function() {
+	console.log(`Server listening for connection requests on socket localhost:${port}.`);
 });
